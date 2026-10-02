@@ -147,10 +147,10 @@ async function mkUser(us,nombre,pw,rol){const sec=firebase.apps.find(a=>a.name==
 function listen(){const sl=fs.collection('sales');
  unsubs.push(fs.collection('products').onSnapshot(s=>{db.products=s.docs.map(x=>x.data()).sort((a,b)=>a.id<b.id?-1:1);refresh()}));
  unsubs.push((isA()?sl:sl.where('fecha','==',iso(new Date()))).onSnapshot(s=>{db.sales=s.docs.map(x=>x.data()).sort((a,b)=>a.id-b.id);refresh()}));
- unsubs.push(fs.collection('cortes').onSnapshot(q=>{db.cortes=q.docs.map(x=>({id:x.id,...x.data()})).sort((a,b)=>a.id<b.id?1:-1);refresh()}));
+ unsubs.push(fs.collection('cortes').onSnapshot(q=>{db.cortesOk=true;db.cortes=q.docs.map(x=>({id:x.id,...x.data()})).sort((a,b)=>a.id<b.id?1:-1);refresh()}));
  if(isA())unsubs.push(fs.collection('users').onSnapshot(s=>{db.users=s.docs.map(x=>({id:x.id,...x.data()}));refresh()}))}
 function refresh(){if(!S.user)return;const v=S.view;
- if(v==='venta'){S.cart=S.cart.filter(c=>prod(c.id)&&prod(c.id).activo);grid();cart();return}
+ if(v==='venta'){S.cart=S.cart.filter(c=>prod(c.id)&&prod(c.id).activo);grid();cart();banner();return}
  if($('modal').innerHTML)return;if(/^(cc|cf)$/.test(document.activeElement.id))return;({dash:vDash,prod:vProd,hist:hRows,rep:vRep,corte:vCorte,conf:vConf})[v]()}
 function toast(t){$('toast').innerHTML='<div class="toast">'+esc(t)+'</div>';setTimeout(()=>$('toast').innerHTML='',2600)}
 function modal(h){$('modal').innerHTML='<div class="ov" onclick="if(event.target===this)closeM()"><div class="md">'+h+'</div></div>'}
@@ -195,7 +195,7 @@ function vDash(){if(!isA()||S.per==='rango')S.per='hoy';const L=salesIn(S.per),s
 function setPer(p){S.per=p;vDash()}
 // ===== Nueva venta =====
 const prod=id=>db.products.find(p=>p.id===id),cartTot=()=>S.cart.reduce((a,c)=>a+c.q*prod(c.id).precio,0);
-function vVenta(){$('main').innerHTML=`<div class="top"><h1>Nueva venta</h1></div><div class="sale"><div><input id="sq" placeholder="Buscar producto…" value="${esc(S.q)}" oninput="S.q=this.value;grid()"><div class="chips" id="chips"></div><div class="prods" id="grid"></div></div><div class="card cart" id="cart"></div></div>`;chips();grid();cart()}
+function vVenta(){$('main').innerHTML=`<div class="top"><h1>Nueva venta</h1></div><div id="cw"></div><div class="sale"><div><input id="sq" placeholder="Buscar producto…" value="${esc(S.q)}" oninput="S.q=this.value;grid()"><div class="chips" id="chips"></div><div class="prods" id="grid"></div></div><div class="card cart" id="cart"></div></div>`;chips();grid();cart();banner()}
 function chips(){$('chips').innerHTML=['Todas','★ Favoritos',...CATS].map(c=>`<button class="${S.cat===c?'on':''}" onclick="S.cat=this.dataset.c;chips();grid()" data-c="${c}">${c==='Todas'?'Todas':c}</button>`).join('')}
 function grid(){const q=S.q.toLowerCase(),L=db.products.filter(p=>p.activo&&(S.cat==='Todas'||(S.cat==='★ Favoritos'?p.fav:p.categoria===S.cat))&&p.nombre.toLowerCase().includes(q)).sort((a,b)=>(b.fav?1:0)-(a.fav?1:0));
  $('grid').innerHTML=L.length?L.map(p=>`<button class="p" onclick="add('${p.id}')"><b>${esc(p.nombre)}</b><em>${money(p.precio)}</em></button>`).join(''):'<p class="k">No hay productos que coincidan.</p>'}
@@ -207,7 +207,10 @@ function cart(){$('cart').innerHTML=`<h3>Venta actual</h3>`+(S.cart.length?S.car
  `<div class="tot"><span>Total</span><b>${money(cartTot())}</b></div><div class="k">Método de pago</div><div class="pay">${PAYS.map(m=>`<button class="${S.pay===m?'on':''}" onclick="S.pay='${m}';cart()">${m}</button>`).join('')}</div><button class="btn gold big" onclick="review()">Cobrar</button>${S.cart.length?'<button class="btn ghost" style="width:100%;margin-top:8px" onclick="clr()">Vaciar venta</button>':''}`}
 const fn=id=>id>1e9?'S/N '+String(id).slice(-5):'#'+id,getSale=id=>db.sales.find(x=>x.id===id)||(S.last&&S.last.id===id?S.last:null),lsg=()=>{try{return localStorage.getItem('cdc_ap')}catch(e){return ''}};
 const NEGOCIO={nombre:'LA CASA DEL CHEFF',sub:'Panadería Boutique',dir:'',pie:'¡Gracias por su compra!'};
-function review(){if(!S.cart.length){toast('Agrega al menos un producto para registrar la venta.');return}
+const cajaAbierta=()=>!db.cortesOk||db.cortes.some(x=>x.id===iso(new Date()));
+function cajaModal(){modal(`<div style="text-align:center"><div style="font-size:40px;color:var(--gold2)">▣</div><h2>Primero abre la caja</h2><p class="k" style="margin:10px 0 18px">Para registrar ventas hoy, abre la caja con el fondo inicial. Tus productos seguirán en la venta actual.</p><button class="btn gold big" onclick="closeM();go('corte')">Ir a abrir la caja</button><button class="btn ghost" style="width:100%;margin-top:8px" onclick="closeM()">Volver</button></div>`)}
+function banner(){const b=$('cw');if(b)b.innerHTML=cajaAbierta()?'':'<div class="card" style="border-color:var(--gold);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><span><b style="color:var(--gold2)">La caja de hoy no está abierta.</b><br><span class="k">Ábrela antes de registrar la primera venta.</span></span><button class="btn gold" onclick="go(\'corte\')">Abrir caja</button></div>'}
+function review(){if(!cajaAbierta()){cajaModal();return}if(!S.cart.length){toast('Agrega al menos un producto para registrar la venta.');return}
  modal(`<h2>Confirmar venta</h2><div style="margin:14px 0">${S.cart.map(c=>{const p=prod(c.id);return`<div class="row"><span>${c.q} × ${esc(p.nombre)}</span><span>${money(c.q*p.precio)}</span></div>`}).join('')}</div>
  <div class="two"><div><label>Descuento</label><input id="dv" type="number" min="0" step="0.5" oninput="recalc()"></div><div><label>Tipo</label><select id="dt" onchange="recalc()"><option value="$">$ pesos</option><option value="%">% porcentaje</option></select></div></div>
  <label>Nota (opcional)</label><input id="nt" maxlength="120" placeholder="Ej. pedido especial">
@@ -218,7 +221,7 @@ function review(){if(!S.cart.length){toast('Agrega al menos un producto para reg
 function calc(){const sub=cartTot(),d=Math.max(0,parseFloat($('dv').value)||0);let ds=$('dt').value==='%'?sub*Math.min(d,100)/100:Math.min(d,sub);ds=Math.round(ds*100)/100;return{sub,ds,tot:Math.round((sub-ds)*100)/100}}
 function recalc(){const c=calc();$('tt').textContent=money(c.tot);const r=$('rv');if(r){const v=parseFloat(r.value);$('cb').textContent=v>=c.tot?money(v-c.tot):'—'}}
 function setRec(n){$('rv').value=n||calc().tot;recalc()}
-async function confirmSale(){if(!S.cart.length)return;const c=calc(),rv=$('rv')?parseFloat($('rv').value):NaN;
+async function confirmSale(){if(!cajaAbierta()){closeM();cajaModal();return}if(!S.cart.length)return;const c=calc(),rv=$('rv')?parseFloat($('rv').value):NaN;
  if(!isNaN(rv)&&rv<c.tot){$('rerr').textContent='El monto recibido es menor al total.';return}
  const items=S.cart.filter(x=>x.q>=1&&prod(x.id)).map(x=>{const p=prod(x.id);return{productoId:p.id,nombre:p.nombre,cant:x.q,precio:p.precio,sub:x.q*p.precio}});if(!items.length)return;
  const btn=event&&event.target;if(btn)btn.disabled=true;const ef=S.pay==='Efectivo',rec=ef?(isNaN(rv)?c.tot:rv):0,ap=$('ap').checked;try{localStorage.setItem('cdc_ap',ap?'1':'')}catch(e){}
