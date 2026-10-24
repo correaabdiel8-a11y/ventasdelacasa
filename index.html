@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <title>La Casa del Cheff · Ventas</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#161616"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes">
 <style>
 :root{color-scheme:dark;--bg:#161616;--card:#202020;--card2:#2a2a2a;--ink:#f4efe4;--mut:#9b917e;--gold:#c9a24b;--gold2:#e6c979;--line:#363636;--ok:#5fbf85;--err:#e0685a;
@@ -144,6 +144,9 @@ th{border-bottom-color:rgba(201,162,75,.25)}
 @keyframes bump{40%{transform:scale(1.14);color:#fff}}@keyframes tick{from{transform:scale(0) rotate(-35deg)}}
 @media print{body:after{display:none!important}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+html,body,button,a,label,select,tr,.p,.card{touch-action:manipulation}
+button,nav,.p,.chips,.seg,.pay{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+@media(pointer:coarse){input,select,textarea{font-size:16px}}
 </style></head><body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <div id="root"></div><div id="modal"></div><div id="toast"></div><div id="tk"></div><div id="net"></div>
